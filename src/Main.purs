@@ -5,6 +5,7 @@ import Prelude (map, show, ($), (<<<), (<>))
 import Effect.Console (log)
 import HTTPure as HTTPure
 import Task (Priority(..), Tag(..), Task)
+import View.Tasks (renderTasks)
 import Data.Foldable (intercalate)
 
 unlines :: Array String -> String
@@ -20,12 +21,6 @@ tasks = [ { name: "Buy milk"
           , tags: []
           }
         ]
-
-renderTask :: Task -> String
-renderTask task = "Task name: " <> task.name <> ", priority: " <> show task.priority
-
-renderTasks :: Array Task -> String
-renderTasks = unlines <<< map renderTask
 
 main :: HTTPure.ServerM
 main =
