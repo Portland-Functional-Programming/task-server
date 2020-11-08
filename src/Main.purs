@@ -31,4 +31,6 @@ main :: HTTPure.ServerM
 main =
   HTTPure.serve 8080 router $ log "Server now up on port 8080"
   where
-    router _ = HTTPure.ok $ renderTasks tasks
+    router { path: [] } = HTTPure.ok "<a href=\"/tasks\">View your tasks</a>"
+    router { path: ["tasks"] } = HTTPure.ok $ renderTasks tasks
+    router _ = HTTPure.notFound
