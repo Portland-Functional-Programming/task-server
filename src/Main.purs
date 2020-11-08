@@ -31,6 +31,6 @@ main :: HTTPure.ServerM
 main =
   HTTPure.serve 8080 router $ log "Server now up on port 8080"
   where
-    router { path: [] } = HTTPure.ok "<a href=\"/tasks\">View your tasks</a>"
+    router { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
     router { path: ["tasks"] } = HTTPure.ok $ renderTasks tasks
     router _ = HTTPure.notFound
