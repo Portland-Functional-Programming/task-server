@@ -4,18 +4,12 @@ import Prelude
 
 import Effect.Console (log)
 import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (liftEffect)
 import HTTPure as HTTPure
 import HTTPure ((!@), Response)
 import Task (Priority(..), Tag(..), Task)
 import View.Tasks (renderTasks)
-import Data.Array (tail)
 import Data.Foldable (intercalate)
-import Data.Maybe (Maybe(..))
 import Node.FS.Aff as FS
-
-unlines :: Array String -> String
-unlines = intercalate "\n"
 
 tasks :: Array Task
 tasks = [ { name: "Buy milk"
@@ -37,5 +31,5 @@ main =
   where
     router { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
     router { path: ["tasks"] } = HTTPure.ok $ renderTasks tasks
-    router { path } | path !@ 0 == "static" = (liftEffect $ log ("path: " <> show path)) *> (serveStaticFile (intercalate "/" path))
+    router { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ = HTTPure.notFound
