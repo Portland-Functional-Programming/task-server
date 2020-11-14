@@ -4,7 +4,7 @@ import Data.Foldable (for_)
 import Prelude (($), Unit, discard, show)
 import Task
 import Text.Smolder.HTML
-import Text.Smolder.HTML.Attributes (lang, href, rel)
+import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, action, method, name)
 import Text.Smolder.Markup ((!), text)
 import Text.Smolder.Renderer.String (render)
 
@@ -24,3 +24,15 @@ renderTasks tasks = render doc
                 th $ text "Task Name"
                 th $ text "Priority"
               tbody $ for_ tasks renderTask
+            h1 $ text "Create a new task"
+            form ! action "/tasks" ! method "POST" $ do
+              label ! for "name" $ text "Task Name: "
+              input ! name "name" ! type' "text" ! id "name"
+              br
+              label ! for "priority" $ text "Priority: "
+              select ! name "priority" ! id "priority" $ do
+                option ! value "low" $ text "Low"
+                option ! value "medium" $ text "Medium"
+                option ! value "high" $ text "High"
+              br
+              input ! type' "submit" ! value "Create"
