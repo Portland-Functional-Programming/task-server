@@ -17,8 +17,6 @@ import HTTPure.Utils as Utils
 import HTTPure ((!!), Response)
 import Task (Priority(..), Task)
 
-import Debug.Trace (trace)
-
 toPriority :: String -> Maybe Priority
 toPriority "low" = Just Low
 toPriority "medium" = Just Medium
@@ -51,9 +49,7 @@ post tasksRef reqBody = do
     Nothing -> HTTPure.badRequest "Unable to create a new task."
   where createTask :: UUID -> Maybe Task
         createTask uuid = do
-          let reqBody' = trace (show reqBody) \_ -> reqBody
-              params' = parse reqBody'
-              params = trace (show params') \_ -> params'
+          let params = parse reqBody
           name <- params !! "name"
           priority <- params !! "priority" >>= toPriority
           pure { id: uuid
