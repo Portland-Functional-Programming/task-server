@@ -6,6 +6,7 @@ import Data.Array ((:), head, tail, filter)
 import Data.Bifunctor as Bifunctor
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
+import Data.UUID (UUID, genUUID)
 import Data.String (split, joinWith, Pattern(..))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
@@ -15,6 +16,8 @@ import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import HTTPure ((!!), Response)
 import Task (Priority(..), Task)
+
+import Debug.Trace (trace)
 
 toPriority :: String -> Maybe Priority
 toPriority "low" = Just Low
@@ -39,16 +42,22 @@ parse = split' "&" >>> nonempty >>> toObject
         itemParts = split' "=" item
 
 post :: forall m. MonadAff m => Ref.Ref (Array Task) -> String -> m Response
-post tasksRef reqBody = case maybeTask of
-  Just task -> do
-    liftEffect $ Ref.modify_ (task : _) tasksRef
-    HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
-  Nothing -> HTTPure.badRequest "Unable to create a new task."
-  where maybeTask = do
-          let params = parse reqBody
+post tasksRef reqBody = do
+  uuid <- liftEffect genUUID
+  case createTask uuid of
+    Just task -> do
+      liftEffect $ Ref.modify_ (task : _) tasksRef
+      HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+    Nothing -> HTTPure.badRequest "Unable to create a new task."
+  where createTask :: UUID -> Maybe Task
+        createTask uuid = do
+          let reqBody' = trace (show reqBody) \_ -> reqBody
+              params' = parse reqBody'
+              params = trace (show params') \_ -> params'
           name <- params !! "name"
           priority <- params !! "priority" >>= toPriority
-          pure { name: name
+          pure { id: uuid
+               , name: name
                , priority: priority
                , tags: []
                }

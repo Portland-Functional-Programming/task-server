@@ -4,6 +4,8 @@ import Prelude
 
 import Controller.Task as TaskController
 import Data.Foldable (intercalate)
+import Data.Maybe (fromJust)
+import Data.UUID (parseUUID)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (liftEffect)
 import Effect.Console (log)
@@ -13,13 +15,16 @@ import HTTPure as HTTPure
 import Node.FS.Aff as FS
 import Task (Priority(..), Tag(..), Task)
 import View.Tasks (renderTasks)
+import Partial.Unsafe (unsafePartial)
 
 tasks :: Array Task
-tasks = [ { name: "Buy milk"
+tasks = [ { id: unsafePartial $ fromJust $ parseUUID "35fb5c26-6478-4756-9894-a1225a5cd838"
+          , name: "Buy milk"
           , priority: Medium
           , tags: [Tag "home"]
           }
-        , { name: "Call Doctor"
+        , { id: unsafePartial $ fromJust $ parseUUID "b59f3bb1-61f3-4d1b-b47c-83f340446a01"
+          , name: "Call Doctor"
           , priority: High
           , tags: []
           }

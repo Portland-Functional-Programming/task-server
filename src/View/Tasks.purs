@@ -10,6 +10,7 @@ import Text.Smolder.Renderer.String (render)
 
 renderTask :: Task -> Html Unit
 renderTask task = tr $ do
+  td $ text (show task.id)
   td $ text task.name
   td $ text (show task.priority)
 
@@ -21,6 +22,7 @@ renderTasks tasks = render doc
             h1 $ text "Your Tasks"
             table $ do
               thead $ tr $ do
+                th $ text "ID"
                 th $ text "Task Name"
                 th $ text "Priority"
               tbody $ for_ tasks renderTask

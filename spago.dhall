@@ -11,6 +11,7 @@ You can edit this file as you like.
   , "psci-support"
   , "refs"
   , "smolder"
+  , "uuid"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -1,6 +1,7 @@
 module Task where
 
 import Prelude
+import Data.UUID (UUID)
 
 data Priority = High
               | Medium
@@ -12,7 +13,8 @@ instance showPriority :: Show Priority where
 
 data Tag = Tag String
 
-type Task = { name :: String
+type Task = { id :: UUID
+            , name :: String
             , priority :: Priority
             , tags :: Array Tag
             }
