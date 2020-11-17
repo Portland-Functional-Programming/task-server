@@ -7,7 +7,12 @@ https://taskwarrior.org/).
 
 ## Building
 
-If you have [Spago](https://github.com/purescript/spago) installed, simply do
+First install native Javascript dependencies with
+
+    $ npm install
+
+Install Purescript dependencies and build the project using
+[Spago](https://github.com/purescript/spago):
 
     $ spago build
 
@@ -19,6 +24,7 @@ If you have Nix installed, you can start a Nix shell with
 
 and then run
 
+    $ npm install
     $ spago build
 
 ## Running
