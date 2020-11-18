@@ -2,7 +2,7 @@ module View.Tasks where
 
 import Data.Foldable (for_)
 import Prelude (($), Unit, discard, show)
-import Task
+import Model.Task
 import Text.Smolder.HTML
 import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, action, method, name)
 import Text.Smolder.Markup ((!), text)

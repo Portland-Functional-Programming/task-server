@@ -1,4 +1,4 @@
-module Task where
+module Model.Task where
 
 import Prelude
 import Data.UUID (UUID)

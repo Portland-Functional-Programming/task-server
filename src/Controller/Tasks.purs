@@ -9,7 +9,7 @@ import Effect.Ref (Ref)
 import HTTPure (Request, Response)
 import HTTPure as HTTPure
 import View.Tasks (renderTasks)
-import Task (Task)
+import Model.Task (Task)
 
 data AcceptType = HTML
                 | JSON

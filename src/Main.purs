@@ -12,7 +12,7 @@ import Effect.Ref as Ref
 import HTTPure ((!@), Response)
 import HTTPure as HTTPure
 import Node.FS.Aff as FS
-import Task (Priority(..), Tag(..), Task)
+import Model.Task (Priority(..), Tag(..), Task)
 import Controller.Tasks as TasksController
 import Partial.Unsafe (unsafePartial)
 

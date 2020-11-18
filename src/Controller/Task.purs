@@ -15,7 +15,7 @@ import Foreign.Object as Object
 import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import HTTPure ((!!), Response)
-import Task (Priority(..), Task)
+import Model.Task (Priority(..), Task)
 
 toPriority :: String -> Maybe Priority
 toPriority "low" = Just Low
