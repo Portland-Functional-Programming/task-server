@@ -12,6 +12,8 @@ instance showPriority :: Show Priority where
   show Low = "low"
 
 data Tag = Tag String
+instance showTag :: Show Tag where
+  show (Tag tag) = tag
 
 type Task = { id :: UUID
             , name :: String

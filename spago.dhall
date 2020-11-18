@@ -10,6 +10,7 @@ You can edit this file as you like.
   , "httpure"
   , "psci-support"
   , "refs"
+  , "simple-json"
   , "smolder"
   , "uuid"
   ]
