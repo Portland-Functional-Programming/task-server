@@ -1,4 +1,4 @@
-module View.Tasks where
+module View.HTML.Tasks (render) where
 
 import Data.Foldable (for_)
 import Prelude (($), Unit, discard, show)
@@ -6,7 +6,7 @@ import Model.Task
 import Text.Smolder.HTML
 import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, action, method, name)
 import Text.Smolder.Markup ((!), text)
-import Text.Smolder.Renderer.String (render)
+import Text.Smolder.Renderer.String as Smolder
 
 renderTask :: Task -> Html Unit
 renderTask task = tr $ do
@@ -14,8 +14,8 @@ renderTask task = tr $ do
   td $ text task.name
   td $ text (show task.priority)
 
-renderTasks :: Array Task -> String
-renderTasks tasks = render doc
+render :: Array Task -> String
+render tasks = Smolder.render doc
   where doc = html ! lang "en" $ do
           head $ link ! href "/static/css/tasks.css" ! rel "stylesheet"
           body $ do
