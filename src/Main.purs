@@ -7,14 +7,13 @@ import Data.Foldable (intercalate)
 import Data.Maybe (fromJust)
 import Data.UUID (parseUUID)
 import Effect.Aff.Class (class MonadAff, liftAff)
-import Effect.Class (liftEffect)
 import Effect.Console (log)
 import Effect.Ref as Ref
 import HTTPure ((!@), Response)
 import HTTPure as HTTPure
 import Node.FS.Aff as FS
 import Task (Priority(..), Tag(..), Task)
-import View.Tasks (renderTasks)
+import Controller.Tasks as TasksController
 import Partial.Unsafe (unsafePartial)
 
 tasks :: Array Task
@@ -39,9 +38,7 @@ main = do
   HTTPure.serve 8080 (router tasksRef) $ log "Server now up on port 8080"
   where
     router _ { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
-    router tasksRef { path: ["tasks"], method: HTTPure.Get } = do
-      tasks' <- liftEffect $ Ref.read tasksRef
-      HTTPure.ok $ renderTasks tasks'
+    router tasksRef req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get tasksRef req
     router tasksRef { path: ["tasks"], method: HTTPure.Post, body } = TaskController.post tasksRef body
     router _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ _ = HTTPure.notFound
