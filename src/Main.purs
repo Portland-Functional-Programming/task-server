@@ -2,7 +2,6 @@ module Main where
 
 import Prelude
 
-import Controller.Task as TaskController
 import Data.Foldable (intercalate)
 import Data.Maybe (fromJust)
 import Data.UUID (parseUUID)
@@ -39,6 +38,6 @@ main = do
   where
     router _ { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
     router tasksRef req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get tasksRef req
-    router tasksRef { path: ["tasks"], method: HTTPure.Post, body } = TaskController.post tasksRef body
+    router tasksRef { path: ["tasks"], method: HTTPure.Post, body } = TasksController.post tasksRef body
     router _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ _ = HTTPure.notFound
