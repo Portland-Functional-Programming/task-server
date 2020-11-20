@@ -11,7 +11,6 @@ import Text.Smolder.Renderer.String as Smolder
 
 renderTask :: Task -> Html Unit
 renderTask task = tr $ do
-  td $ text (toString task.id)
   td $ text task.name
   td $ text $ show task.status
   td $ text (show task.priority)
@@ -24,7 +23,6 @@ render tasks = Smolder.render doc
             h1 $ text "Your Tasks"
             table $ do
               thead $ tr $ do
-                th $ text "ID"
                 th $ text "Task Name"
                 th $ text "Status"
                 th $ text "Priority"
