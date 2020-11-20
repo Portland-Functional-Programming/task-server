@@ -13,6 +13,7 @@ renderTask :: Task -> Html Unit
 renderTask task = tr $ do
   td $ text (toString task.id)
   td $ text task.name
+  td $ text $ show task.status
   td $ text (show task.priority)
 
 render :: Array Task -> String
@@ -25,6 +26,7 @@ render tasks = Smolder.render doc
               thead $ tr $ do
                 th $ text "ID"
                 th $ text "Task Name"
+                th $ text "Status"
                 th $ text "Priority"
               tbody $ for_ tasks renderTask
             h1 $ text "Create a new task"

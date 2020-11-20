@@ -11,18 +11,20 @@ import Effect.Ref as Ref
 import HTTPure ((!@), Response)
 import HTTPure as HTTPure
 import Node.FS.Aff as FS
-import Model.Task (Priority(..), Tag(..), Task)
+import Model.Task (Priority(..), Tag(..), Task, Status(..))
 import Controller.Tasks as TasksController
 import Partial.Unsafe (unsafePartial)
 
 tasks :: Array Task
 tasks = [ { id: unsafePartial $ fromJust $ parseUUID "35fb5c26-6478-4756-9894-a1225a5cd838"
           , name: "Buy milk"
+          , status: Backlog
           , priority: Medium
           , tags: [Tag "home"]
           }
         , { id: unsafePartial $ fromJust $ parseUUID "b59f3bb1-61f3-4d1b-b47c-83f340446a01"
           , name: "Call Doctor"
+          , status: DueToday
           , priority: High
           , tags: []
           }

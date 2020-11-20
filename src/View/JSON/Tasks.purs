@@ -9,6 +9,7 @@ import Simple.JSON as JSON
 type JSONTask =
   { id :: String
   , name :: String
+  , status :: String
   , priority :: String
   , tags :: Array String
   }
@@ -17,6 +18,7 @@ taskToJsonTask :: Task -> JSONTask
 taskToJsonTask task =
   { id: toString task.id
   , name: task.name
+  , status: show task.status
   , priority: show task.priority
   , tags: map show task.tags
   }

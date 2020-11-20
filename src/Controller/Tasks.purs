@@ -18,7 +18,7 @@ import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
 import View.JSON.Tasks as JSON
-import Model.Task (Task, Priority(..))
+import Model.Task (Task, Priority(..), create)
 
 data AcceptType = HTML
                 | JSON
@@ -75,8 +75,5 @@ post tasksRef reqBody = do
           let params = parse reqBody
           name <- params !! "name"
           priority <- params !! "priority" >>= toPriority
-          pure { id: uuid
-               , name: name
-               , priority: priority
-               , tags: []
-               }
+          pure $ create uuid name priority []
+
