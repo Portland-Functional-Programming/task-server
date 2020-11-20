@@ -1,6 +1,7 @@
 module View.HTML.Tasks (render) where
 
 import Data.Foldable (for_)
+import Data.UUID (toString)
 import Prelude (($), Unit, discard, show)
 import Model.Task
 import Text.Smolder.HTML
@@ -10,7 +11,7 @@ import Text.Smolder.Renderer.String as Smolder
 
 renderTask :: Task -> Html Unit
 renderTask task = tr $ do
-  td $ text (show task.id)
+  td $ text (toString task.id)
   td $ text task.name
   td $ text (show task.priority)
 

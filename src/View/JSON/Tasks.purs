@@ -2,6 +2,7 @@ module View.JSON.Tasks (render) where
 
 import Prelude
 
+import Data.UUID (toString)
 import Model.Task (Task)
 import Simple.JSON as JSON
 
@@ -14,7 +15,7 @@ type JSONTask =
 
 taskToJsonTask :: Task -> JSONTask
 taskToJsonTask task =
-  { id: show task.id
+  { id: toString task.id
   , name: task.name
   , priority: show task.priority
   , tags: map show task.tags
