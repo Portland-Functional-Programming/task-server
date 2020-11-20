@@ -4,10 +4,8 @@ import Prelude
 
 import Data.Array (head, tail, filter, (:))
 import Data.Bifunctor as Bifunctor
-import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (split, joinWith, Pattern(..), contains)
-import Data.String.CaseInsensitive (CaseInsensitiveString(..))
 import Data.Tuple (Tuple(..))
 import Data.UUID (UUID, genUUID)
 import Effect.Aff.Class (class MonadAff)
