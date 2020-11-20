@@ -4,8 +4,10 @@ import Prelude
 
 import Data.Array (head, tail, filter, (:))
 import Data.Bifunctor as Bifunctor
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.String (split, joinWith, Pattern(..))
+import Data.String (split, joinWith, Pattern(..), contains)
+import Data.String.CaseInsensitive (CaseInsensitiveString(..))
 import Data.Tuple (Tuple(..))
 import Data.UUID (UUID, genUUID)
 import Effect.Aff.Class (class MonadAff)
@@ -13,7 +15,7 @@ import Effect.Class (liftEffect)
 import Effect.Ref as Ref
 import Effect.Ref (Ref)
 import Foreign.Object as Object
-import HTTPure (Request, Response, (!!))
+import HTTPure (Request, Response, (!!), lookup)
 import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
@@ -46,8 +48,13 @@ parse = split' "&" >>> nonempty >>> toObject
       where
         itemParts = split' "=" item
 
+wantsJSON :: Request -> Boolean
+wantsJSON { headers } = case lookup headers "Accept" of
+  Just accept -> contains (Pattern "application/json") accept
+  Nothing -> false
+
 acceptTypeFromRequest :: Request -> AcceptType
-acceptTypeFromRequest _ = JSON
+acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 
 get :: forall m. MonadAff m => Ref (Array Task) -> Request -> m Response
 get tasksRef req = do
