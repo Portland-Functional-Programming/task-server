@@ -13,6 +13,7 @@ import HTTPure as HTTPure
 import Node.FS.Aff as FS
 import Model.Task (Priority(..), Tag(..), Task, Status(..))
 import Controller.Tasks as TasksController
+import Controller.Task as TaskController
 import Partial.Unsafe (unsafePartial)
 
 tasks :: Array Task
@@ -41,5 +42,6 @@ main = do
     router _ { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
     router tasksRef req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get tasksRef req
     router tasksRef { path: ["tasks"], method: HTTPure.Post, body } = TasksController.post tasksRef body
+    router tasksRef req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = TaskController.delete tasksRef req
     router _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ _ = HTTPure.notFound
