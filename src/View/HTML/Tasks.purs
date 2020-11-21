@@ -1,8 +1,9 @@
 module View.HTML.Tasks (render) where
 
+import Prelude
+
 import Data.Foldable (for_)
 import Data.UUID (toString)
-import Prelude (($), Unit, discard, show)
 import Model.Task
 import Text.Smolder.HTML
 import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, action, method, name)
@@ -14,6 +15,9 @@ renderTask task = tr $ do
   td $ text task.name
   td $ text $ show task.status
   td $ text (show task.priority)
+  td $ form ! action ("/task/" <> toString task.id) ! method "POST" $ do
+    input ! type' "hidden" ! name "_method" ! value "delete"
+    input ! type' "submit" ! value "Delete"
 
 render :: Array Task -> String
 render tasks = Smolder.render doc
@@ -26,6 +30,7 @@ render tasks = Smolder.render doc
                 th $ text "Task Name"
                 th $ text "Status"
                 th $ text "Priority"
+                th $ text ""
               tbody $ for_ tasks renderTask
             h1 $ text "Create a new task"
             form ! action "/tasks" ! method "POST" $ do

@@ -43,5 +43,6 @@ main = do
     router tasksRef req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get tasksRef req
     router tasksRef { path: ["tasks"], method: HTTPure.Post, body } = TasksController.post tasksRef body
     router tasksRef req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = TaskController.delete tasksRef req
+    router tasksRef req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = TaskController.post tasksRef req
     router _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ _ = HTTPure.notFound
