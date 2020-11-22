@@ -2,6 +2,7 @@ module View.HTML.Tasks (render) where
 
 import Prelude
 
+import Data.Array (length)
 import Data.Foldable (for_)
 import Data.UUID (toString)
 import Model.Task
@@ -24,23 +25,25 @@ render tasks = Smolder.render doc
   where doc = html ! lang "en" $ do
           head $ link ! href "/static/css/tasks.css" ! rel "stylesheet"
           body $ do
-            h1 $ text "Your Tasks"
-            table $ do
-              thead $ tr $ do
-                th $ text "Task Name"
-                th $ text "Status"
-                th $ text "Priority"
-                th $ text ""
-              tbody $ for_ tasks renderTask
-            h1 $ text "Create a new task"
-            form ! action "/tasks" ! method "POST" $ do
-              label ! for "name" $ text "Task Name: "
-              input ! name "name" ! type' "text" ! id "name"
-              br
-              label ! for "priority" $ text "Priority: "
-              select ! name "priority" ! id "priority" $ do
-                option ! value "low" $ text "Low"
-                option ! value "medium" $ text "Medium"
-                option ! value "high" $ text "High"
-              br
-              input ! type' "submit" ! value "Create"
+                   h1 $ text "Your Tasks"
+                   if length tasks > 0 then
+                      table $ do
+                        thead $ tr $ do
+                          th $ text "Task Name"
+                          th $ text "Status"
+                          th $ text "Priority"
+                          th $ text ""
+                        tbody $ for_ tasks renderTask
+                     else p $ text "You have no tasks."
+                   h1 $ text "Create a new task"
+                   form ! action "/tasks" ! method "POST" $ do
+                     label ! for "name" $ text "Task Name: "
+                     input ! name "name" ! type' "text" ! id "name"
+                     br
+                     label ! for "priority" $ text "Priority: "
+                     select ! name "priority" ! id "priority" $ do
+                       option ! value "low" $ text "Low"
+                       option ! value "medium" $ text "Medium"
+                       option ! value "high" $ text "High"
+                     br
+                     input ! type' "submit" ! value "Create"
