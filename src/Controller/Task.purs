@@ -7,15 +7,14 @@ import Data.Bifunctor as Bifunctor
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (split, joinWith, Pattern(..))
 import Data.Tuple (Tuple(..))
-import Data.UUID (parseUUID, UUID)
+import Data.UUID (parseUUID, UUID, toString)
 import Effect.Aff.Class (class MonadAff)
-import Effect.Class (liftEffect)
-import Effect.Ref as Ref
 import Foreign.Object as Object
 import HTTPure (Request, Response, (!@), (!!))
 import HTTPure as HTTPure
 import HTTPure.Utils as Utils
-import Model.Task (Task)
+import Model.Task (Task, Status(Deleted))
+import Persistence (Persistence)
 
 -- | Copied with modification from
 -- https://github.com/cprussin/purescript-httpure/blob/a81abca2d64bd9805874c4a2a80c07144fd19d11/src/HTTPure/Query.purs#L29
@@ -33,11 +32,11 @@ parse = split' "&" >>> nonempty >>> toObject
       where
         itemParts = split' "=" item
 
-post :: forall m. MonadAff m => Ref.Ref (Array Task) -> Request -> m Response
-post tasksRef req = do
+post :: forall m. MonadAff m => Persistence m -> Request -> m Response
+post repo req = do
   let params = parse req.body
   case params !! "_method" of
-    Just "delete" -> delete tasksRef req
+    Just "delete" -> delete repo req
     _ -> HTTPure.badRequest "POSTing to a task URI is currently only used for deleting a task."
 
 deleteTask :: UUID -> Array Task -> Array Task
@@ -48,10 +47,14 @@ deleteTask uuid tasks = case maybeTasks of
           i <- findIndex (\{ id } -> id == uuid) tasks
           deleteAt i tasks
 
-delete :: forall m. MonadAff m => Ref.Ref (Array Task) -> Request -> m Response
-delete tasksRef { path } = case maybeUUID of
+delete :: forall m. MonadAff m => Persistence m -> Request -> m Response
+delete repo { path } = case maybeUUID of
   Just uuid -> do
-    liftEffect $ Ref.modify_ (deleteTask uuid) tasksRef
-    HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+    maybeTask <- repo.getTaskById uuid
+    case maybeTask of
+      Just task -> do
+        repo.save (task { status = Deleted })
+        HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+      Nothing -> HTTPure.badRequest ("Could not delete with ID " <> toString uuid <> ".")
   Nothing -> HTTPure.badRequest "Invalid task ID."
   where maybeUUID = parseUUID (path !@ 1)

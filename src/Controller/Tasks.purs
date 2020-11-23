@@ -2,7 +2,7 @@ module Controller.Tasks (get, post) where
 
 import Prelude
 
-import Data.Array (head, tail, filter, (:))
+import Data.Array (head, tail, filter)
 import Data.Bifunctor as Bifunctor
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (split, joinWith, Pattern(..), contains)
@@ -10,8 +10,6 @@ import Data.Tuple (Tuple(..))
 import Data.UUID (UUID, genUUID)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
-import Effect.Ref as Ref
-import Effect.Ref (Ref)
 import Foreign.Object as Object
 import HTTPure (Request, Response, (!!), lookup)
 import HTTPure as HTTPure
@@ -19,6 +17,7 @@ import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
 import View.JSON.Tasks as JSON
 import Model.Task (Task, Priority(..), create)
+import Persistence (Persistence)
 
 data AcceptType = HTML
                 | JSON
@@ -54,20 +53,20 @@ wantsJSON { headers } = case lookup headers "Accept" of
 acceptTypeFromRequest :: Request -> AcceptType
 acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 
-get :: forall m. MonadAff m => Ref (Array Task) -> Request -> m Response
-get tasksRef req = do
-  tasks' <- liftEffect $ Ref.read tasksRef
+get :: forall m. MonadAff m => Persistence m -> Request -> m Response
+get repo req = do
+  tasks' <- repo.getAll
   case acceptTypeFromRequest req of
     HTML -> HTTPure.ok $ HTML.render tasks'
     JSON -> HTTPure.ok $ JSON.render tasks'
     Other -> HTTPure.notAcceptable
 
-post :: forall m. MonadAff m => Ref.Ref (Array Task) -> String -> m Response
-post tasksRef reqBody = do
+post :: forall m. MonadAff m => Persistence m -> String -> m Response
+post repo reqBody = do
   uuid <- liftEffect genUUID
   case createTask uuid of
     Just task -> do
-      liftEffect $ Ref.modify_ (task : _) tasksRef
+      repo.save task
       HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
     Nothing -> HTTPure.badRequest "Unable to create a new task."
   where createTask :: UUID -> Maybe Task
