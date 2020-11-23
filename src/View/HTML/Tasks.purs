@@ -5,7 +5,7 @@ import Prelude
 import Data.Array (length)
 import Data.Foldable (for_)
 import Data.UUID (toString)
-import Model.Task
+import Model.Task (Task)
 import Text.Smolder.HTML
 import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, action, method, name)
 import Text.Smolder.Markup ((!), text)

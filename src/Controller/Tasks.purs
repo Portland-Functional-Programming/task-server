@@ -16,7 +16,7 @@ import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
 import View.JSON.Tasks as JSON
-import Model.Task (Task, Priority(..), create)
+import Model.Task (Task, Priority(..), create, Status(Deleted))
 import Persistence (Persistence)
 
 data AcceptType = HTML
@@ -56,9 +56,10 @@ acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 get :: forall m. MonadAff m => Persistence m -> Request -> m Response
 get repo req = do
   tasks' <- repo.getAll
+  let undeletedTasks = filter (\task -> task.status /= Deleted) tasks'
   case acceptTypeFromRequest req of
-    HTML -> HTTPure.ok $ HTML.render tasks'
-    JSON -> HTTPure.ok $ JSON.render tasks'
+    HTML -> HTTPure.ok $ HTML.render undeletedTasks
+    JSON -> HTTPure.ok $ JSON.render undeletedTasks
     Other -> HTTPure.notAcceptable
 
 post :: forall m. MonadAff m => Persistence m -> String -> m Response

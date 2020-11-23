@@ -19,6 +19,7 @@ data Status = Backlog
             | DueToday
             | Done
             | Deleted
+derive instance statusEq :: Eq Status
 instance showStatus :: Show Status where
   show Backlog = "Backlog"
   show DueToday = "Due today"
