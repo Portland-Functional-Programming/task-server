@@ -14,7 +14,7 @@ import HTTPure (Request, Response, (!@), (!!))
 import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import Model.Task (Task, Status(Deleted))
-import Persistence (Persistence)
+import Persistence (class Persistence, getTaskById, save)
 
 -- | Copied with modification from
 -- https://github.com/cprussin/purescript-httpure/blob/a81abca2d64bd9805874c4a2a80c07144fd19d11/src/HTTPure/Query.purs#L29
@@ -32,7 +32,7 @@ parse = split' "&" >>> nonempty >>> toObject
       where
         itemParts = split' "=" item
 
-post :: forall m. MonadAff m => Persistence m -> Request -> m Response
+post :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
 post repo req = do
   let params = parse req.body
   case params !! "_method" of
@@ -47,13 +47,13 @@ deleteTask uuid tasks = case maybeTasks of
           i <- findIndex (\{ id } -> id == uuid) tasks
           deleteAt i tasks
 
-delete :: forall m. MonadAff m => Persistence m -> Request -> m Response
+delete :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
 delete repo { path } = case maybeUUID of
   Just uuid -> do
-    maybeTask <- repo.getTaskById uuid
+    maybeTask <- getTaskById repo uuid
     case maybeTask of
       Just task -> do
-        repo.save (task { status = Deleted })
+        save repo (task { status = Deleted })
         HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
       Nothing -> HTTPure.badRequest ("Could not delete with ID " <> toString uuid <> ".")
   Nothing -> HTTPure.badRequest "Invalid task ID."

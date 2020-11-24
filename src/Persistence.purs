@@ -13,19 +13,20 @@ import Effect (Effect)
 import Effect.Class (liftEffect)
 import Partial.Unsafe (unsafePartial)
 
-type Persistence m = { getTaskById :: UUID -> m (Maybe Task)
-                     , getAll :: m (Array Task)
-                     , save :: Task ->  m Unit
-                     }
+class Persistence p where
+  getTaskById :: forall m. MonadAff m => p -> UUID -> m (Maybe Task)
+  getAll :: forall m. MonadAff m => p -> m (Array Task)
+  save :: forall m. MonadAff m => p -> Task ->  m Unit
 
-mkInMemoryPersitence :: forall m. MonadAff m => Effect (Persistence m)
-mkInMemoryPersitence = do
-  ref <- Ref.new []
-  let repo = { getTaskById: _getTaskById ref
-             , getAll: _getAll ref
-             , save: _save ref
-             }
-  pure repo
+newtype InMemoryPersistence = InMemoryPersistence (Ref (Array Task))
+
+instance inMemoryPersistence :: Persistence InMemoryPersistence where
+  getTaskById (InMemoryPersistence ref) = _getTaskById ref
+  getAll (InMemoryPersistence ref) = _getAll ref
+  save (InMemoryPersistence ref) = _save ref
+
+mkInMemoryPersitence :: Effect InMemoryPersistence
+mkInMemoryPersitence = Ref.new [] <#> InMemoryPersistence
 
 _getTaskById :: forall m. MonadAff m => Ref (Array Task) -> UUID -> m (Maybe Task)
 _getTaskById ref uuid = do

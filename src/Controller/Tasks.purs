@@ -17,7 +17,7 @@ import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
 import View.JSON.Tasks as JSON
 import Model.Task (Task, Priority(..), create, Status(Deleted))
-import Persistence (Persistence)
+import Persistence (class Persistence, getAll, save)
 
 data AcceptType = HTML
                 | JSON
@@ -53,21 +53,21 @@ wantsJSON { headers } = case lookup headers "Accept" of
 acceptTypeFromRequest :: Request -> AcceptType
 acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 
-get :: forall m. MonadAff m => Persistence m -> Request -> m Response
+get :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
 get repo req = do
-  tasks' <- repo.getAll
+  tasks' <- getAll repo
   let undeletedTasks = filter (\task -> task.status /= Deleted) tasks'
   case acceptTypeFromRequest req of
     HTML -> HTTPure.ok $ HTML.render undeletedTasks
     JSON -> HTTPure.ok $ JSON.render undeletedTasks
     Other -> HTTPure.notAcceptable
 
-post :: forall m. MonadAff m => Persistence m -> String -> m Response
+post :: forall m p. MonadAff m => Persistence p => p -> String -> m Response
 post repo reqBody = do
   uuid <- liftEffect genUUID
   case createTask uuid of
     Just task -> do
-      repo.save task
+      save repo task
       HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
     Nothing -> HTTPure.badRequest "Unable to create a new task."
   where createTask :: UUID -> Maybe Task
