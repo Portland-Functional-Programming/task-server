@@ -24,6 +24,7 @@ main = do
     router repo req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get repo req
     router repo { path: ["tasks"], method: HTTPure.Post, body } = TasksController.post repo body
     router repo req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = TaskController.delete repo req
+    router repo req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = TaskController.patch repo req
     router repo req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = TaskController.post repo req
     router _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
     router _ _ = HTTPure.notFound

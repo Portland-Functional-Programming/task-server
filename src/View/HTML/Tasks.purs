@@ -11,10 +11,21 @@ import Text.Smolder.HTML.Attributes (lang, href, rel, type', for, id, value, act
 import Text.Smolder.Markup ((!), text)
 import Text.Smolder.Renderer.String as Smolder
 
+changeStatusForm :: Task -> Html Unit
+changeStatusForm task =
+  form ! action ("/task/" <> toString task.id) ! method "POST" $ do
+    input ! type' "hidden" ! name "_method" ! value "patch"
+    select ! name "status" ! id "status" $ do
+      option ! value "backlog" $ text "Backlog"
+      option ! value "dueToday" $ text "Due Today"
+      option ! value "done" $ text "Done"
+    input ! type' "submit" ! value "Update"
+
 renderTask :: Task -> Html Unit
 renderTask task = tr $ do
   td $ text task.name
   td $ text $ show task.status
+  th $ changeStatusForm task
   td $ text (show task.priority)
   td $ form ! action ("/task/" <> toString task.id) ! method "POST" $ do
     input ! type' "hidden" ! name "_method" ! value "delete"
@@ -31,6 +42,7 @@ render tasks = Smolder.render doc
                         thead $ tr $ do
                           th $ text "Task Name"
                           th $ text "Status"
+                          th $ text ""
                           th $ text "Priority"
                           th $ text ""
                         tbody $ for_ tasks renderTask
