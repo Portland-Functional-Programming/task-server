@@ -10,6 +10,8 @@ import HTTPure as HTTPure
 import Node.FS.Aff as FS
 import Controller.Tasks as TasksController
 import Controller.Task as TaskController
+import Controller.Home as HomeController
+import Controller.Login as LoginController
 import Persistence (mkInMemoryPersitence)
 
 serveStaticFile :: forall m. MonadAff m => String -> m Response
@@ -20,9 +22,10 @@ main = do
   repo <- mkInMemoryPersitence
   HTTPure.serve 8080 (router repo) $ log "Server now up on port 8080"
   where
-    router _ { path: [] } = HTTPure.permanentRedirect' (HTTPure.header "Location" "/tasks") ""
+    router _ req@{ path: [] } = HomeController.get req
     router repo req@{ path: ["tasks"], method: HTTPure.Get } = TasksController.get repo req
     router repo { path: ["tasks"], method: HTTPure.Post, body } = TasksController.post repo body
+    router repo { path: ["login"], method: HTTPure.Get } = LoginController.get
     router repo req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = TaskController.delete repo req
     router repo req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = TaskController.patch repo req
     router repo req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = TaskController.post repo req
