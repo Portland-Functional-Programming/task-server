@@ -6,6 +6,8 @@ newtype UserId = UserId String
 derive instance userIdEq :: Eq UserId
 newtype UserName = UserName String
 derive instance userNameEq :: Eq UserName
+instance userNameShow :: Show UserName where
+  show (UserName username) = username
 
 type User =
   { id :: UserId

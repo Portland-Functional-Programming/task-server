@@ -9,7 +9,7 @@ import HTTP.Query (parse)
 import Data.Maybe (maybe)
 
 get :: forall m. MonadAff m => m Response
-get = HTTPure.unauthorized' $ HTTPure.header "WWW-Authenticate" "Basic realm=\"Task Scheduler\""
+get = HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
 
 -- post :: forall m r. MonadAff m => UserRepository r => r -> String -> m Response
 -- post repo body = maybe HTTPure.unauthorized login maybeCreds

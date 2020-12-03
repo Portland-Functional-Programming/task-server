@@ -6,6 +6,7 @@ import Data.Array (findIndex, head, updateAt, filter, (:))
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (liftEffect)
 import Model.User (User, UserName)
+import Effect (Effect)
 import Effect.Ref (Ref, modify_)
 import Effect.Ref as Ref
 import Data.Maybe (Maybe(..))
@@ -19,6 +20,9 @@ newtype InMemoryUserRepo = InMemoryUserRepo (Ref (Array User))
 instance inMemoryUserRepo :: UserRepository InMemoryUserRepo where
   getUserByUserName (InMemoryUserRepo ref) = _getUserByUserName ref
   save (InMemoryUserRepo ref) = _save ref
+
+mkInMemoryUserRepository :: Effect InMemoryUserRepo
+mkInMemoryUserRepository = Ref.new [] <#> InMemoryUserRepo
 
 _getUserByUserName :: forall m. MonadAff m => Ref (Array User) -> UserName -> m (Maybe User)
 _getUserByUserName ref username = do
