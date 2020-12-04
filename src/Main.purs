@@ -35,20 +35,10 @@ authChallenge = HTTPure.unauthorized' $ HTTPure.header "WWW-Authenticate" "Basic
 
 getCreds :: Request -> Maybe (Tuple UserName String)
 getCreds req = do
-  credsArray <- req.headers !! "authorization" >>= (stripPrefix (Pattern "Basic ") >=> (decode >>> hush) <#> (split (Pattern ":")))
+  credsArray <- req.headers !! "authorization" >>= (stripPrefix (Pattern "Basic ") >=> (decode >>> hush)) <#> split (Pattern ":")
   case credsArray of
     [username, password] -> Just (Tuple (UserName username) password)
     _ -> Nothing
-  -- let params' = parse req.body
-  --     params = trace (req.headers !! "authorization") (\_ -> params')
-  --     maybeCreds = do
-  --       authHeader <- 
-        
-  -- username <- params !! "username"
-  -- password <- params !! "password"
-  -- Just $ Tuple (UserName username) password
-  -- where extractEncodedCreds :: String -> Maybe String
-  --       extractEncodedCreds s |  
 
 authMiddleware :: forall r p. UserRepository r => Persistence p
                => r
@@ -58,7 +48,6 @@ authMiddleware :: forall r p. UserRepository r => Persistence p
                -> ResponseM
 authMiddleware userRepo repo f req = do
   let maybeCreds = getCreds req
-  liftEffect $ log $ "Creds: " <> show maybeCreds
   case maybeCreds of
     Just (Tuple username password) -> do
       maybeUser <- liftAff $ getUserByUserName userRepo username
