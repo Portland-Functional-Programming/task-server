@@ -40,13 +40,13 @@ getCreds req = do
     [username, password] -> Just (Tuple (UserName username) password)
     _ -> Nothing
 
-authMiddleware :: forall r p. UserRepository r => Persistence p
+authenticate :: forall r p. UserRepository r => Persistence p
                => r
                -> p
                -> (p -> User -> Request -> ResponseM)
                -> Request
                -> ResponseM
-authMiddleware userRepo repo f req = do
+authenticate userRepo repo f req = do
   let maybeCreds = getCreds req
   case maybeCreds of
     Just (Tuple username password) -> do
@@ -72,7 +72,7 @@ authRoutes _ _ _ = HTTPure.notFound
 router :: forall r p. UserRepository r => Persistence p => r -> p -> Request -> ResponseM
 router _ _ req@{ path: [] } = HomeController.get req
 router _ _ { path } | path !@ 0 == "static" = serveStaticFile (intercalate "/" path)
-router userRepo taskRepo req = authMiddleware userRepo taskRepo authRoutes req
+router userRepo taskRepo req = authenticate userRepo taskRepo authRoutes req
 
 main :: HTTPure.ServerM
 main = do
