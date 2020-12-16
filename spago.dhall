@@ -14,6 +14,7 @@ You can edit this file as you like.
   , "refs"
   , "simple-json"
   , "smolder"
+  , "transformers"
   , "uuid"
   ]
 , packages = ./packages.dhall

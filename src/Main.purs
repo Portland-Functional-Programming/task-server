@@ -25,17 +25,19 @@ import Controller.Login as LoginController
 import Model.User
 import Persistence (class Persistence, mkInMemoryPersitence)
 import Persistence.UserRepository (class UserRepository, mkInMemoryUserRepository, getUserByUserName, save)
+import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
+import Control.Monad.Trans.Class (lift)
 
 type Env u t = Tuple u t
-type AppM u t m a = Env u t -> m a
+type AppM u t m a = ReaderT (Env u t) m a
 runApp :: forall r p m a. UserRepository r => Persistence p => MonadAff m => AppM r p m a -> Env r p -> m a
-runApp app env = app env
+runApp app env = runReaderT app env
 
 getUserRepo :: forall u t m. UserRepository u => Persistence t => MonadAff m => AppM u t m u
-getUserRepo = fst >>> pure
+getUserRepo = asks fst
 
 getTaskRepo :: forall u t m. UserRepository u => Persistence t => MonadAff m => AppM u t m t
-getTaskRepo = snd >>> pure
+getTaskRepo = asks snd
 
 serveStaticFile :: forall m. MonadAff m => String -> m Response
 serveStaticFile path = liftAff $ FS.readFile path >>= HTTPure.ok
@@ -78,14 +80,16 @@ authenticationMiddleware :: forall r p m. UserRepository r => Persistence p => M
 authenticationMiddleware router req = do
   liftEffect $ log "Running authentication middleware."
   let maybeCreds = getCreds req
+  liftEffect $ log $ "maybeCreds: " <> show maybeCreds
   case maybeCreds of
     Just (Tuple username password) -> do
       userRepo <- getUserRepo
       maybeUser <- getUserByUserName userRepo username
+      liftEffect $ log $ "maybeUser: " <> show maybeUser
       case maybeUser of
         Just user -> auth password user
         Nothing -> liftAff HTTPure.unauthorized
-    Nothing -> authChallenge
+    Nothing -> liftAff authChallenge
   where auth password user = if user.password == password
                     then router user req
                     else liftAff HTTPure.unauthorized
@@ -101,8 +105,8 @@ authorizationMiddleware router loggedInUser req = do
   case maybeResourceUser of
     Just resourceUser -> if resourceUser.username == loggedInUser.username
                          then router loggedInUser req
-                         else \_ -> liftAff HTTPure.unauthorized
-    Nothing -> \_ -> liftAff HTTPure.unauthorized
+                         else liftAff HTTPure.unauthorized
+    Nothing -> liftAff HTTPure.unauthorized
 
 -- |Get the user whose resource is the target of this request. The assumption
 -- |here is that resource path has the form `/<username>/<resource-path>`.
@@ -115,7 +119,7 @@ authorizationMiddleware router loggedInUser req = do
 getResourceUser :: forall r p m. UserRepository r => Persistence p => MonadAff m
                 => Request
                 -> AppM r p m (Maybe User)
-getResourceUser _ = \_ -> pure Nothing
+getResourceUser req = pure Nothing
 
 -- authorize :: User
 --           -> (User -> Request -> ResponseM)
@@ -142,12 +146,12 @@ getResourceUser _ = \_ -> pure Nothing
 
 -- |Routes requiring authorization
 authRouter :: forall r p m. UserRepository r => Persistence p => MonadAff m => User -> Request -> AppM r p m Response
-authRouter _ req@{ path: ["tasks"], method: HTTPure.Get } = \_ taskRepo -> TasksController.get taskRepo req
-authRouter _ { path: ["tasks"], method: HTTPure.Post, body } = \_ taskRepo -> TasksController.post taskRepo body
-authRouter _ { path: ["login"], method: HTTPure.Get } = \_ _ -> LoginController.get
-authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = \_ taskRepo -> TaskController.delete taskRepo req
-authRouter _ req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = \_ taskRepo -> TaskController.patch taskRepo req
-authRouter _ req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = \_ taskRepo -> TaskController.post taskRepo req
+authRouter _ req@{ path: ["tasks"], method: HTTPure.Get } = getTaskRepo >>= \taskRepo -> lift $ TasksController.get taskRepo req
+authRouter _ { path: ["tasks"], method: HTTPure.Post, body } = getTaskRepo >>= \taskRepo -> lift $ TasksController.post taskRepo body
+authRouter _ { path: ["login"], method: HTTPure.Get } = lift LoginController.get
+authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.delete taskRepo req
+authRouter _ req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.patch taskRepo req
+authRouter _ req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.post taskRepo req
 authRouter _ _ = HTTPure.notFound
 
 -- router :: forall r p. UserRepository r => Persistence p => r -> p -> Request -> ResponseM
@@ -163,12 +167,12 @@ authRouter _ _ = HTTPure.notFound
 -- topLevelRouter userRepo taskRepo authRouter req = authRouter userRepo taskRepo req
 
 topLevelRouter' :: forall r p m. UserRepository r => Persistence p => MonadAff m => Request -> AppM r p m Response
-topLevelRouter' req@{ path: [] } = \_ _ -> HomeController.get req
-topLevelRouter' { path } | path !@ 0 == "static" = \_ _ -> serveStaticFile (intercalate "/" path)
-topLevelRouter' req = authorizationMiddleware >>> authenticationMiddleware $ authRouter
+topLevelRouter' req@{ path: [] } = lift $ HomeController.get req
+topLevelRouter' { path } | path !@ 0 == "static" = lift $ serveStaticFile (intercalate "/" path)
+topLevelRouter' req = (authorizationMiddleware >>> authenticationMiddleware) authRouter req
 
-router' :: forall r p m. UserRepository r => Persistence p => MonadAff m => Env r p -> Request -> ResponseM
-router' userRepo taskRepo req = runApp (topLevelRouter' req) userRepo taskRepo
+router' :: forall r p. UserRepository r => Persistence p => Env r p -> Request -> ResponseM
+router' env req = liftAff $ runApp (topLevelRouter' req) env
 
 -- f >>> g :: (a -> b) -> (b -> c) -> a -> c
 --
@@ -201,9 +205,10 @@ main :: HTTPure.ServerM
 main = do
   taskRepo <- mkInMemoryPersitence
   userRepo <- mkInMemoryUserRepository
-  let user = { id: (UserId "12345")
+  let env = Tuple userRepo taskRepo
+      user = { id: (UserId "12345")
              , username: (UserName "tim")
              , password: "password"
              }
   launchAff_ $ save userRepo user
-  HTTPure.serve 8080 (router' userRepo taskRepo) $ log "Server now up on port 8080"
+  HTTPure.serve 8080 (router' env) $ log "Server now up on port 8080"
