@@ -9,7 +9,6 @@ import Data.Foldable (intercalate)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..), fst, snd)
 import Data.String (stripPrefix, split, Pattern(..))
-import Data.String.Base64 (decode)
 import Effect.Aff (launchAff_)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (liftEffect)
@@ -17,7 +16,6 @@ import HTTP.Query (parse)
 import HTTPure ((!!), (!@), Request, Response, ResponseM)
 import HTTPure as HTTPure
 import Node.FS.Aff as FS
-import Control.Error.Util (hush)
 import Controller.Tasks as TasksController
 import Controller.Task as TaskController
 import Controller.Home as HomeController
@@ -27,30 +25,11 @@ import Persistence (class Persistence, mkInMemoryPersitence)
 import Persistence.UserRepository (class UserRepository, mkInMemoryUserRepository, getUserByUserName, save)
 import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
 import Control.Monad.Trans.Class (lift)
-
-type Env u t = Tuple u t
-type AppM u t m a = ReaderT (Env u t) m a
-runApp :: forall r p m a. UserRepository r => Persistence p => MonadAff m => AppM r p m a -> Env r p -> m a
-runApp app env = runReaderT app env
-
-getUserRepo :: forall u t m. UserRepository u => Persistence t => MonadAff m => AppM u t m u
-getUserRepo = asks fst
-
-getTaskRepo :: forall u t m. UserRepository u => Persistence t => MonadAff m => AppM u t m t
-getTaskRepo = asks snd
+import App
+import Auth
 
 serveStaticFile :: forall m. MonadAff m => String -> m Response
 serveStaticFile path = liftAff $ FS.readFile path >>= HTTPure.ok
-
-authChallenge :: HTTPure.ResponseM
-authChallenge = HTTPure.unauthorized' $ HTTPure.header "WWW-Authenticate" "Basic realm=\"Task Scheduler\""
-
-getCreds :: Request -> Maybe (Tuple UserName String)
-getCreds req = do
-  credsArray <- req.headers !! "authorization" >>= (stripPrefix (Pattern "Basic ") >=> (decode >>> hush)) <#> split (Pattern ":")
-  case credsArray of
-    [username, password] -> Just (Tuple (UserName username) password)
-    _ -> Nothing
 
 -- |Authenticatoin middleware. This is not standard HTTPure middleware as the
 -- |type signature here is application specific.
@@ -61,7 +40,7 @@ getCreds req = do
 --                -> Request
 --                -> ResponseM
 -- authenticate userRepo repo f req = do
---   let maybeCreds = getCreds req
+--   let maybeCreds = getCredentials req
 --   case maybeCreds of
 --     Just (Tuple username password) -> do
 --       maybeUser <- getUserByUserName userRepo username
@@ -79,7 +58,7 @@ authenticationMiddleware :: forall r p m. UserRepository r => Persistence p => M
                          -> AppM r p m Response
 authenticationMiddleware router req = do
   liftEffect $ log "Running authentication middleware."
-  let maybeCreds = getCreds req
+  let maybeCreds = getCredentials req
   liftEffect $ log $ "maybeCreds: " <> show maybeCreds
   case maybeCreds of
     Just (Tuple username password) -> do
@@ -148,7 +127,7 @@ getResourceUser req = pure Nothing
 authRouter :: forall r p m. UserRepository r => Persistence p => MonadAff m => User -> Request -> AppM r p m Response
 authRouter _ req@{ path: ["tasks"], method: HTTPure.Get } = getTaskRepo >>= \taskRepo -> lift $ TasksController.get taskRepo req
 authRouter _ { path: ["tasks"], method: HTTPure.Post, body } = getTaskRepo >>= \taskRepo -> lift $ TasksController.post taskRepo body
-authRouter _ { path: ["login"], method: HTTPure.Get } = lift LoginController.get
+--authRouter _ { path: ["login"], method: HTTPure.Get } = lift LoginController.get
 authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.delete taskRepo req
 authRouter _ req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.patch taskRepo req
 authRouter _ req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.post taskRepo req
@@ -168,6 +147,7 @@ authRouter _ _ = HTTPure.notFound
 
 topLevelRouter' :: forall r p m. UserRepository r => Persistence p => MonadAff m => Request -> AppM r p m Response
 topLevelRouter' req@{ path: [] } = lift $ HomeController.get req
+topLevelRouter' req@{ path: ["login"], method: HTTPure.Get } = LoginController.get req
 topLevelRouter' { path } | path !@ 0 == "static" = lift $ serveStaticFile (intercalate "/" path)
 topLevelRouter' req = (authorizationMiddleware >>> authenticationMiddleware) authRouter req
 
