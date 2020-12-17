@@ -79,8 +79,9 @@ authorizationMiddleware :: forall r p m. UserRepository r => Persistence p => Mo
                          -> Request
                          -> AppM r p m Response
 authorizationMiddleware router loggedInUser req = do
-  liftEffect $ log "Running authorization middleware."
+  liftEffect $ log $ "Running authorization middleware. Path: " <> show req.path
   maybeResourceUser <- getResourceUser req
+  liftEffect $ log $ "maybeResourceUser: " <> show maybeResourceUser
   case maybeResourceUser of
     Just resourceUser -> if resourceUser.username == loggedInUser.username
                          then router loggedInUser req
@@ -98,7 +99,10 @@ authorizationMiddleware router loggedInUser req = do
 getResourceUser :: forall r p m. UserRepository r => Persistence p => MonadAff m
                 => Request
                 -> AppM r p m (Maybe User)
-getResourceUser req = pure Nothing
+getResourceUser req = do
+  let userName = UserName $ req.path !@ 0
+  userRepo <- getUserRepo
+  liftAff $ getUserByUserName userRepo userName
 
 -- authorize :: User
 --           -> (User -> Request -> ResponseM)
@@ -125,7 +129,7 @@ getResourceUser req = pure Nothing
 
 -- |Routes requiring authorization
 authRouter :: forall r p m. UserRepository r => Persistence p => MonadAff m => User -> Request -> AppM r p m Response
-authRouter _ req@{ path: ["tasks"], method: HTTPure.Get } = getTaskRepo >>= \taskRepo -> lift $ TasksController.get taskRepo req
+authRouter user req@{ path, method: HTTPure.Get } | path !@ 1 == "tasks" = let username = UserName (path !@ 0) in TasksController.get user username req
 authRouter _ { path: ["tasks"], method: HTTPure.Post, body } = getTaskRepo >>= \taskRepo -> lift $ TasksController.post taskRepo body
 --authRouter _ { path: ["login"], method: HTTPure.Get } = lift LoginController.get
 authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.delete taskRepo req

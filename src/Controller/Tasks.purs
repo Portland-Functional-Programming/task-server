@@ -2,13 +2,14 @@ module Controller.Tasks (get, post) where
 
 import Prelude
 
+import Control.Monad.Trans.Class (lift)
 import Data.Array (head, tail, filter)
 import Data.Bifunctor as Bifunctor
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.String (split, joinWith, Pattern(..), contains)
 import Data.Tuple (Tuple(..))
 import Data.UUID (UUID, genUUID)
-import Effect.Aff.Class (class MonadAff)
+import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (liftEffect)
 import Foreign.Object as Object
 import HTTPure (Request, Response, (!!), lookup)
@@ -17,6 +18,10 @@ import HTTPure.Utils as Utils
 import View.HTML.Tasks as HTML
 import View.JSON.Tasks as JSON
 import Model.Task (Task, Priority(..), create, Status(Deleted))
+import Model.User (User, UserName)
+import App
+import Persistence.UserRepository (class UserRepository)
+import Persistence (class Persistence)
 import Persistence (class Persistence, getAll, save)
 
 data AcceptType = HTML
@@ -53,14 +58,23 @@ wantsJSON { headers } = case lookup headers "Accept" of
 acceptTypeFromRequest :: Request -> AcceptType
 acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 
-get :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
-get repo req = do
-  tasks' <- getAll repo
-  let undeletedTasks = filter (\task -> task.status /= Deleted) tasks'
-  case acceptTypeFromRequest req of
-    HTML -> HTTPure.ok $ HTML.render undeletedTasks
-    JSON -> HTTPure.ok $ JSON.render undeletedTasks
-    Other -> HTTPure.notAcceptable
+get :: forall r p m. UserRepository r => Persistence p => MonadAff m
+    => User
+    -> UserName
+    -> Request
+    -> AppM r p m Response
+get user username req =
+  if user.username /= username
+  then liftAff HTTPure.unauthorized
+  else do
+    taskRepo <- getTaskRepo
+    tasks' <- lift $ getAll taskRepo
+    -- TODO get tasks for the given user.
+    let undeletedTasks = filter (\task -> task.status /= Deleted) tasks'
+    liftAff $ case acceptTypeFromRequest req of
+      HTML -> HTTPure.ok $ HTML.render undeletedTasks
+      JSON -> HTTPure.ok $ JSON.render undeletedTasks
+      Other -> HTTPure.notAcceptable
 
 post :: forall m p. MonadAff m => Persistence p => p -> String -> m Response
 post repo reqBody = do
