@@ -2,6 +2,7 @@ module Model.Task where
 
 import Prelude
 import Data.UUID (UUID)
+import Model.User (User)
 
 data Priority = High
               | Medium
@@ -31,12 +32,14 @@ type Task = { id :: UUID
             , status :: Status
             , priority :: Priority
             , tags :: Array Tag
+            , createdBy :: User
             }
 
 create :: UUID
        -> String
        -> Priority
        -> Array Tag
+       -> User
        -> Task
-create id name priority tags =
-  { id, name, status: Backlog, priority, tags }
+create id name priority tags user =
+  { id, name, status: Backlog, priority, tags, createdBy: user }

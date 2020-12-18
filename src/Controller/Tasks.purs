@@ -2,6 +2,7 @@ module Controller.Tasks (get, post) where
 
 import Prelude
 
+import Effect.Console (log)
 import Control.Monad.Trans.Class (lift)
 import Data.Array (head, tail, filter)
 import Data.Bifunctor as Bifunctor
@@ -70,24 +71,29 @@ get user username req =
     taskRepo <- getTaskRepo
     tasks' <- lift $ getAll taskRepo
     -- TODO get tasks for the given user.
-    let undeletedTasks = filter (\task -> task.status /= Deleted) tasks'
+    let undeletedTasks = filter (\task -> task.status /= Deleted && task.createdBy == user) tasks'
     liftAff $ case acceptTypeFromRequest req of
       HTML -> HTTPure.ok $ HTML.render undeletedTasks
       JSON -> HTTPure.ok $ JSON.render undeletedTasks
       Other -> HTTPure.notAcceptable
 
-post :: forall m p. MonadAff m => Persistence p => p -> String -> m Response
-post repo reqBody = do
+post :: forall m u t. MonadAff m => UserRepository u => Persistence t
+     => User
+     -> Request
+     -> AppM u t m Response
+post user req = do
+  liftEffect $ log "Creating new task."
+  taskRepo <- getTaskRepo
   uuid <- liftEffect genUUID
   case createTask uuid of
     Just task -> do
-      save repo task
-      HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+      save taskRepo task
+      HTTPure.seeOther' (HTTPure.header "Location" ("/" <> show user.username <> "/tasks")) ""
     Nothing -> HTTPure.badRequest "Unable to create a new task."
   where createTask :: UUID -> Maybe Task
         createTask uuid = do
-          let params = parse reqBody
+          let params = parse req.body
           name <- params !! "name"
           priority <- params !! "priority" >>= toPriority
-          pure $ create uuid name priority []
+          pure $ create uuid name priority [] user
 

@@ -130,7 +130,7 @@ getResourceUser req = do
 -- |Routes requiring authorization
 authRouter :: forall r p m. UserRepository r => Persistence p => MonadAff m => User -> Request -> AppM r p m Response
 authRouter user req@{ path, method: HTTPure.Get } | path !@ 1 == "tasks" = let username = UserName (path !@ 0) in TasksController.get user username req
-authRouter _ { path: ["tasks"], method: HTTPure.Post, body } = getTaskRepo >>= \taskRepo -> lift $ TasksController.post taskRepo body
+authRouter user req@{ path: ["tasks"], method: HTTPure.Post } = TasksController.post user req
 --authRouter _ { path: ["login"], method: HTTPure.Get } = lift LoginController.get
 authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.delete taskRepo req
 authRouter _ req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.patch taskRepo req
@@ -153,7 +153,7 @@ topLevelRouter' :: forall r p m. UserRepository r => Persistence p => MonadAff m
 topLevelRouter' req@{ path: [] } = lift $ HomeController.get req
 topLevelRouter' req@{ path: ["login"], method: HTTPure.Get } = LoginController.get req
 topLevelRouter' { path } | path !@ 0 == "static" = lift $ serveStaticFile (intercalate "/" path)
-topLevelRouter' req = (authorizationMiddleware >>> authenticationMiddleware) authRouter req
+topLevelRouter' req = authenticationMiddleware authRouter req
 
 router' :: forall r p. UserRepository r => Persistence p => Env r p -> Request -> ResponseM
 router' env req = liftAff $ runApp (topLevelRouter' req) env
