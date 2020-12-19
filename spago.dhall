@@ -4,7 +4,9 @@ You can edit this file as you like.
 -}
 { name = "my-project"
 , dependencies =
-  [ "console"
+  [ "b64"
+  , "console"
+  , "debug"
   , "effect"
   , "errors"
   , "httpure"
@@ -12,6 +14,7 @@ You can edit this file as you like.
   , "refs"
   , "simple-json"
   , "smolder"
+  , "transformers"
   , "uuid"
   ]
 , packages = ./packages.dhall

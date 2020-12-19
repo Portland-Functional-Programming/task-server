@@ -45,18 +45,3 @@ _save ref task = do
             Just tasks'' -> tasks''
             Nothing -> tasks
           Nothing -> task:tasks
-  
-tasks' :: Array Task
-tasks' = [ { id: unsafePartial $ fromJust $ parseUUID "35fb5c26-6478-4756-9894-a1225a5cd838"
-           , name: "Buy milk"
-           , status: Backlog
-           , priority: Medium
-           , tags: [Tag "home"]
-           }
-         , { id: unsafePartial $ fromJust $ parseUUID "b59f3bb1-61f3-4d1b-b47c-83f340446a01"
-           , name: "Call Doctor"
-           , status: DueToday
-           , priority: High
-           , tags: []
-           }
-         ]

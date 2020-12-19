@@ -60,7 +60,7 @@ delete repo { path } = case maybeUUID of
     case maybeTask of
       Just task -> do
         save repo (task { status = Deleted })
-        HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+        HTTPure.seeOther' (HTTPure.header "Location" ("/" <> show task.createdBy.username <> "/tasks")) ""
       Nothing -> HTTPure.badRequest ("Could not delete with ID " <> toString uuid <> ".")
   Nothing -> HTTPure.badRequest "Invalid task ID."
   where maybeUUID = parseUUID (path !@ 1)
@@ -82,7 +82,7 @@ patch repo req = case maybeUUID of
       Just task -> case maybeStatus of
         Just status' -> do
           save repo (task { status = status' })
-          HTTPure.seeOther' (HTTPure.header "Location" "/tasks") ""
+          HTTPure.seeOther' (HTTPure.header "Location" ("/" <> show task.createdBy.username <> "/tasks")) ""
         Nothing -> HTTPure.badRequest ("Could not update task with ID " <> toString uuid <> ".")
         where params = parse req.body
               maybeStatus = params !! "status" >>= readStatus
