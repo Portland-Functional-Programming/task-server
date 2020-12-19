@@ -19,7 +19,7 @@ import Controller.Task as TaskController
 import Controller.Home as HomeController
 import Controller.Login as LoginController
 import Model.User
-import Persistence (class Persistence, mkInMemoryPersitence)
+import Persistence (class TaskRepository, mkInMemoryPersitence)
 import Persistence.UserRepository (class UserRepository, mkInMemoryUserRepository, getUserByUserName, save)
 import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
 import Control.Monad.Trans.Class (lift)
@@ -29,7 +29,7 @@ import Auth
 serveStaticFile :: forall m. MonadAff m => String -> m Response
 serveStaticFile path = liftAff $ FS.readFile path >>= HTTPure.ok
 
-authenticationMiddleware :: forall r p m. UserRepository r => Persistence p => MonadAff m
+authenticationMiddleware :: forall r p m. UserRepository r => TaskRepository p => MonadAff m
                          => (User -> Request -> AppM r p m Response)
                          -> Request
                          -> AppM r p m Response
@@ -47,7 +47,7 @@ authenticationMiddleware router req = do
                     then router user req
                     else liftAff HTTPure.unauthorized
 
-authorizationMiddleware :: forall r p m. UserRepository r => Persistence p => MonadAff m
+authorizationMiddleware :: forall r p m. UserRepository r => TaskRepository p => MonadAff m
                          => (User -> Request -> AppM r p m Response)
                          -> User
                          -> Request
@@ -60,7 +60,7 @@ authorizationMiddleware router loggedInUser req = do
                          else liftAff HTTPure.unauthorized
     Nothing -> liftAff HTTPure.unauthorized
 
-getResourceUser :: forall r p m. UserRepository r => Persistence p => MonadAff m
+getResourceUser :: forall r p m. UserRepository r => TaskRepository p => MonadAff m
                 => Request
                 -> AppM r p m (Maybe User)
 getResourceUser req = do
@@ -69,7 +69,7 @@ getResourceUser req = do
   liftAff $ getUserByUserName userRepo userName
 
 -- |Routes requiring authorization
-authRouter :: forall r p m. UserRepository r => Persistence p => MonadAff m => User -> Request -> AppM r p m Response
+authRouter :: forall r p m. UserRepository r => TaskRepository p => MonadAff m => User -> Request -> AppM r p m Response
 authRouter user req@{ path, method: HTTPure.Get } | path !@ 1 == "tasks" = let username = UserName (path !@ 0) in TasksController.get user username req
 authRouter user req@{ path: ["tasks"], method: HTTPure.Post } = TasksController.post user req
 authRouter _ req@{ path, method: HTTPure.Delete } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.delete taskRepo req
@@ -77,13 +77,13 @@ authRouter _ req@{ path, method: HTTPure.Patch } | path !@ 0 == "task" = getTask
 authRouter _ req@{ path, method: HTTPure.Post } | path !@ 0 == "task" = getTaskRepo >>= \taskRepo -> lift $ TaskController.post taskRepo req
 authRouter _ _ = HTTPure.notFound
 
-topLevelRouter' :: forall r p m. UserRepository r => Persistence p => MonadAff m => Request -> AppM r p m Response
+topLevelRouter' :: forall r p m. UserRepository r => TaskRepository p => MonadAff m => Request -> AppM r p m Response
 topLevelRouter' req@{ path: [] } = lift $ HomeController.get req
 topLevelRouter' req@{ path: ["login"], method: HTTPure.Get } = LoginController.get req
 topLevelRouter' { path } | path !@ 0 == "static" = lift $ serveStaticFile (intercalate "/" path)
 topLevelRouter' req = authenticationMiddleware authRouter req
 
-router' :: forall r p. UserRepository r => Persistence p => Env r p -> Request -> ResponseM
+router' :: forall r p. UserRepository r => TaskRepository p => Env r p -> Request -> ResponseM
 router' env req = liftAff $ runApp (topLevelRouter' req) env
 
 main :: HTTPure.ServerM

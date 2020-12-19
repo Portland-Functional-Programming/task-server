@@ -22,8 +22,7 @@ import Model.Task (Task, Priority(..), create, Status(Deleted))
 import Model.User (User, UserName)
 import App
 import Persistence.UserRepository (class UserRepository)
-import Persistence (class Persistence)
-import Persistence (class Persistence, getAll, save)
+import Persistence (class TaskRepository, getAll, save)
 
 data AcceptType = HTML
                 | JSON
@@ -59,7 +58,7 @@ wantsJSON { headers } = case lookup headers "Accept" of
 acceptTypeFromRequest :: Request -> AcceptType
 acceptTypeFromRequest req = if wantsJSON req then JSON else HTML
 
-get :: forall r p m. UserRepository r => Persistence p => MonadAff m
+get :: forall r p m. UserRepository r => TaskRepository p => MonadAff m
     => User
     -> UserName
     -> Request
@@ -77,7 +76,7 @@ get user username req =
       JSON -> HTTPure.ok $ JSON.render undeletedTasks
       Other -> HTTPure.notAcceptable
 
-post :: forall m u t. MonadAff m => UserRepository u => Persistence t
+post :: forall m u t. MonadAff m => UserRepository u => TaskRepository t
      => User
      -> Request
      -> AppM u t m Response

@@ -9,14 +9,14 @@ import HTTP.Query (parse)
 import Data.Maybe (maybe)
 import Persistence.UserRepository (class UserRepository, getUserByUserName)
 import Effect.Class (liftEffect)
-import Persistence (class Persistence)
+import Persistence (class TaskRepository)
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
 import App
 import Auth
 import Model.User (UserName(..))
 
-get :: forall r p m. UserRepository r => Persistence p => MonadAff m
+get :: forall r p m. UserRepository r => TaskRepository p => MonadAff m
     => Request
     -> AppM r p m Response
 get req = do

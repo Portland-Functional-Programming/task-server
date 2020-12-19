@@ -19,7 +19,7 @@ import HTTPure (Request, Response, (!@), (!!))
 import HTTPure as HTTPure
 import HTTPure.Utils as Utils
 import Model.Task (Task, Status(..))
-import Persistence (class Persistence, getTaskById, save)
+import Persistence (class TaskRepository, getTaskById, save)
 
 -- | Copied with modification from
 -- https://github.com/cprussin/purescript-httpure/blob/a81abca2d64bd9805874c4a2a80c07144fd19d11/src/HTTPure/Query.purs#L29
@@ -37,7 +37,7 @@ parse = split' "&" >>> nonempty >>> toObject
       where
         itemParts = split' "=" item
 
-post :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
+post :: forall m p. MonadAff m => TaskRepository p => p -> Request -> m Response
 post repo req = do
   let params = parse req.body
   case params !! "_method" of
@@ -53,7 +53,7 @@ deleteTask uuid tasks = case maybeTasks of
           i <- findIndex (\{ id } -> id == uuid) tasks
           deleteAt i tasks
 
-delete :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
+delete :: forall m p. MonadAff m => TaskRepository p => p -> Request -> m Response
 delete repo { path } = case maybeUUID of
   Just uuid -> do
     maybeTask <- getTaskById repo uuid
@@ -74,7 +74,7 @@ readStatus = CaseInsensitiveString >>> iReadStatus
                       | s == CaseInsensitiveString "deleted" = Just Deleted
                       | otherwise = Nothing
 
-patch :: forall m p. MonadAff m => Persistence p => p -> Request -> m Response
+patch :: forall m p. MonadAff m => TaskRepository p => p -> Request -> m Response
 patch repo req = case maybeUUID of
   Just uuid -> do
     maybeTask <- getTaskById repo uuid
