@@ -32,15 +32,3 @@ get req = do
           else liftAff HTTPure.unauthorized
         Nothing -> liftAff HTTPure.unauthorized
     Nothing -> liftAff authChallenge
-
--- post :: forall m r. MonadAff m => UserRepository r => r -> String -> m Response
--- post repo body = maybe HTTPure.unauthorized login maybeCreds
---   where
---     maybeCreds :: Maybe (UserName, String)
---     maybeCreds = do
---       let params = parse body
---       username <- params !! "username"
---       password <- params !! "password"
---       pure (username, password)
-
---     login :: (UserName, String) -> 
