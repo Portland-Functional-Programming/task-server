@@ -57,14 +57,11 @@ authenticationMiddleware :: forall r p m. UserRepository r => Persistence p => M
                          -> Request
                          -> AppM r p m Response
 authenticationMiddleware router req = do
-  liftEffect $ log "Running authentication middleware."
   let maybeCreds = getCredentials req
-  liftEffect $ log $ "maybeCreds: " <> show maybeCreds
   case maybeCreds of
     Just (Tuple username password) -> do
       userRepo <- getUserRepo
       maybeUser <- getUserByUserName userRepo username
-      liftEffect $ log $ "maybeUser: " <> show maybeUser
       case maybeUser of
         Just user -> auth password user
         Nothing -> liftAff HTTPure.unauthorized
@@ -79,9 +76,7 @@ authorizationMiddleware :: forall r p m. UserRepository r => Persistence p => Mo
                          -> Request
                          -> AppM r p m Response
 authorizationMiddleware router loggedInUser req = do
-  liftEffect $ log $ "Running authorization middleware. Path: " <> show req.path
   maybeResourceUser <- getResourceUser req
-  liftEffect $ log $ "maybeResourceUser: " <> show maybeResourceUser
   case maybeResourceUser of
     Just resourceUser -> if resourceUser.username == loggedInUser.username
                          then router loggedInUser req

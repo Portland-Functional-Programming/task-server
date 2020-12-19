@@ -82,7 +82,6 @@ post :: forall m u t. MonadAff m => UserRepository u => Persistence t
      -> Request
      -> AppM u t m Response
 post user req = do
-  liftEffect $ log "Creating new task."
   taskRepo <- getTaskRepo
   uuid <- liftEffect genUUID
   case createTask uuid of

@@ -9,7 +9,6 @@ import HTTP.Query (parse)
 import Data.Maybe (maybe)
 import Persistence.UserRepository (class UserRepository, getUserByUserName)
 import Effect.Class (liftEffect)
-import Effect.Console (log)
 import Persistence (class Persistence)
 import Data.Tuple (Tuple(..))
 import Data.Maybe (Maybe(..))
@@ -26,7 +25,6 @@ get req = do
     Just (Tuple username password) -> do
       userRepo <- getUserRepo
       maybeUser <- getUserByUserName userRepo username
-      liftEffect $ log $ "maybeUser: " <> show maybeUser
       case maybeUser of
         Just { username: UserName userName, password: realPassword } ->
           if password == realPassword
