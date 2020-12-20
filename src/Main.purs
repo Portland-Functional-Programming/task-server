@@ -19,7 +19,8 @@ import Controller.Task as TaskController
 import Controller.Home as HomeController
 import Controller.Login as LoginController
 import Model.User
-import Persistence (class TaskRepository, mkInMemoryPersitence)
+import Persistence (class TaskRepository)
+import Persistence.InMemoryTaskRepository (mkInMemoryPersitence)
 import Persistence.UserRepository (class UserRepository, mkInMemoryUserRepository, getUserByUserName, save)
 import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
 import Control.Monad.Trans.Class (lift)
