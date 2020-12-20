@@ -1,4 +1,4 @@
-module Persistence.UserRepository where
+module Persistence.InMemoryUserRepository  where
 
 import Prelude
 
@@ -10,16 +10,13 @@ import Effect (Effect)
 import Effect.Ref (Ref, modify_)
 import Effect.Ref as Ref
 import Data.Maybe (Maybe(..))
-
-class UserRepository r where
-  getUserByUserName :: forall m. MonadAff m => r -> UserName -> m (Maybe User)
-  save :: forall m. MonadAff m => r -> User -> m Unit
+import Persistence (class UserRepository)
 
 newtype InMemoryUserRepo = InMemoryUserRepo (Ref (Array User))
 
 instance inMemoryUserRepo :: UserRepository InMemoryUserRepo where
   getUserByUserName (InMemoryUserRepo ref) = _getUserByUserName ref
-  save (InMemoryUserRepo ref) = _save ref
+  saveUser (InMemoryUserRepo ref) = _save ref
 
 mkInMemoryUserRepository :: Effect InMemoryUserRepo
 mkInMemoryUserRepository = Ref.new [] <#> InMemoryUserRepo

@@ -2,8 +2,7 @@ module App where
 
 import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
 import Effect.Aff.Class (class MonadAff)
-import Persistence.UserRepository (class UserRepository)
-import Persistence (class TaskRepository)
+import Persistence (class TaskRepository, class UserRepository)
 import Data.Tuple (Tuple, fst, snd)
 
 type Env u t = Tuple u t

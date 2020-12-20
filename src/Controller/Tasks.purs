@@ -21,8 +21,7 @@ import View.JSON.Tasks as JSON
 import Model.Task (Task, Priority(..), create, Status(Deleted))
 import Model.User (User, UserName)
 import App
-import Persistence.UserRepository (class UserRepository)
-import Persistence (class TaskRepository, getAll, save)
+import Persistence (class TaskRepository, getAll, save, class UserRepository)
 
 data AcceptType = HTML
                 | JSON

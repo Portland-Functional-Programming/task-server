@@ -19,9 +19,9 @@ import Controller.Task as TaskController
 import Controller.Home as HomeController
 import Controller.Login as LoginController
 import Model.User
-import Persistence (class TaskRepository)
+import Persistence (class TaskRepository, class UserRepository, getUserByUserName, saveUser)
 import Persistence.InMemoryTaskRepository (mkInMemoryPersitence)
-import Persistence.UserRepository (class UserRepository, mkInMemoryUserRepository, getUserByUserName, save)
+import Persistence.InMemoryUserRepository (mkInMemoryUserRepository)
 import Control.Monad.Reader.Trans (ReaderT, runReaderT, asks)
 import Control.Monad.Trans.Class (lift)
 import App
@@ -96,5 +96,5 @@ main = do
              , username: (UserName "tim")
              , password: "password"
              }
-  launchAff_ $ save userRepo user
+  launchAff_ $ saveUser userRepo user
   HTTPure.serve 8080 (router' env) $ log "Server now up on port 8080"
